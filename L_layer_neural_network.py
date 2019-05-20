@@ -86,8 +86,9 @@ def linear_model_forward(X,parameters):
 def compute_cost(AL,Y):
     
     m=Y.shape[1]
-    cost=-(1/m)*np.sum(Y*np.log(AL)+(1-Y)*np.log(1-AL))
+    cost = (1./m) * (-np.dot(Y,np.log(AL).T) - np.dot(1-Y, np.log(1-AL).T))
     
+    #cost = np.squeeze(cost)     
     return cost
 
 
