@@ -1,66 +1,67 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Jun  9 01:43:45 2019
+Created on Tue Jun 11 22:32:19 2019
 
 @author: fabian
 """
+import tkinter
 
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-df=pd.read_csv(r"C:\AI\train.csv")
+User_name=""
 
-
-Train_orig=df.iloc[:,1:len(df.columns)].values
-
-train=Train_orig.reshape(Train_orig.shape[0],28,28)
-
-plt.imshow(train[3])
-
-
-from scipy.misc import toimage
-import tkinter as tk
-import numpy as np
-from PIL import Image, ImageTk
-
-
-i=10
-
-def action():
-   global i
-   global appl
-   global entry
-   print(i)
-
-   i=i+1
-
-   array1 = train[i]
-   image1=Image.fromarray(array1.astype('uint8'))
-   image1 = image1.resize((250, 250), Image.ANTIALIAS)
-   appl.img1 =  ImageTk.PhotoImage(image1)
-
-
-   #entry=tk.Label(appl,image=img1)
-   entry.config(image=appl.img1)
-   entry.image = appl.img1
-   
-   entry.pack()
-   appl.update_idletasks()
+def page_two():
+    data=entry.get()
+    if data=="" or data=="Please enter your name":
+        entry.delete(0,"end")
+        entry.insert(0,"Please enter your name")
+    else:
+        User_name=data
+        window.destroy()
+        print(data)
+        #print(d)
 
 
 
 
-appl = tk.Tk()
-appl.geometry("1000x500")
-array = train[i]
-image=Image.fromarray(array.astype('uint8'))
-image = image.resize((250, 250), Image.ANTIALIAS)
-img =  ImageTk.PhotoImage(image)
+window = tkinter.Tk()
+window.title("Human error in Digit Recogniser")
 
-entry=tk.Label(appl, image=img)
-entry.pack()
+window.geometry("300x100")
 
-button=tk.Button(appl,text="Next",command=action)
-button.pack(side="left")
+tkinter.Label(window, text = "Enter Name").pack(side="left") # this is placed in 0 0
+# 'Entry' is used to display the input-field
+entry=tkinter.Entry(window)
+entry.pack(side="left") # this is placed in 0 1
+#T = tk.Text(root, height=2, width=30)
+tkinter.Button(window,text="Next",command=page_two).pack(side="left")
 
-appl.mainloop()
+window.mainloop()
+
+
+
+
+
+m1 =tkinter.PanedWindow()
+m1.pack(fill="both", expand=1)
+
+left = tkinter.Label(m1, text="left pane")
+m1.add(left)
+
+m2 = tkinter.PanedWindow( orient="vertical")
+#m1.add(m2)
+m2.pack(fill="both", expand=1)
+
+top = tkinter.Label(m2, text="top pane")
+m2.add(top)
+
+bottom = tkinter.Label(m2, text="bottom pane")
+m2.add(bottom)
+
+tkinter.mainloop()
+
+
+
+
+
+
+
+
