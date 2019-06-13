@@ -15,6 +15,10 @@ Created on Sun Jun  9 01:43:45 2019
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
+User_name=""
+
+
 df=pd.read_csv(r"C:\personal\train.csv")
 
 
@@ -46,10 +50,15 @@ def action(data):
    orig_Y=train_Y[i,0]
    if data!=orig_Y:
        error_count=error_count+1
-   if i>=train.shape[0]:
-       pass
-
+       
    i=i+1
+
+   if i>=12:
+       appl.destroy()
+       error_rate=(error_count/11)*100
+       tk.messagebox.showinfo("Information",User_name+" error _rate is "+str(error_rate)+"%")
+
+
 
    array1 = train[i]
    image1=Image.fromarray(array1.astype('uint8'))
@@ -117,7 +126,7 @@ nine.pack(side="left",padx=4,pady=4)
 
 #button=tk.Button(appl,text="Next",height=5,width=18,command=lambda: action(0))
 #button.pack(side="right")
-
+User_name = tk.simpledialog.askstring(title="Name",prompt="Enter Your Name",parent=appl)
 appl.mainloop()
 
 
