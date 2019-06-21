@@ -127,12 +127,14 @@ def L_layer_model_with_regularization(train_X, train_Y, layers_dims,lambd=10,lea
 """ Predicting Y to plot on a graph """
 
 
-def predict_plot(train_X,parameters):
+
+def predict_plot2(train_X,train_Y,parameters):
     AL_train,caches=lann.linear_model_forward(train_X,parameters)
     AL_train[AL_train>=0.5]=1
     AL_train[AL_train<=0.5]=0
     
     return AL_train
+    
     
 
 layers_dims=[train_X.shape[0],4,1]# Defining the shape of the network
@@ -160,6 +162,43 @@ ax = fig.gca(projection='3d')
 X, Y = np.meshgrid(X1, X2)
 ax.plot_trisurf(xx[:,0],xx[:,1],d[:,0])
 ax.view_init(azim=120)
+
+
+
+
+
+
+
+def plot_decision_boundary(X, y, parameters, steps=1000, cmap='Paired'):
+    cmap = plt.get_cmap(cmap)
+
+    # Define region of interest by data limits
+    xmin, xmax = X[:,0].min() - 1, X[:,0].max() + 1
+    ymin, ymax = X[:,1].min() - 1, X[:,1].max() + 1
+    steps = 1000
+    x_span = np.linspace(xmin, xmax, steps)
+    y_span = np.linspace(ymin, ymax, steps)
+    xx, yy = np.meshgrid(x_span, y_span)
+
+    # Make predictions across region of interest
+    labels = predict_plot2(np.c_[xx.ravel(), yy.ravel()].T,y,parameters)
+
+    # Plot decision boundary in region of interest
+    z = labels.reshape(xx.shape)
+
+    fig, ax = plt.subplots()
+    ax.contourf(xx, yy, z, cmap=cmap, alpha=0.5)
+
+    # Get predicted labels on training data and plot
+    train_labels =predict_plot(X,parameters)
+    color= ['red' if l == 0 else 'green' for l in y.T]
+    ax.scatter(X[0,:], X[1,:],c=color,cmap=cmap, lw=0)
+
+    return fig, ax
+
+
+plot_decision_boundary(train_X,train_Y,parameters,cmap='RdBu')
+
 
 
 
