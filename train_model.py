@@ -26,7 +26,11 @@ from sklearn.datasets import make_circles
 #y=mat["y"]
 """ Create dataset and transform  the dataset """
 
-X, y = make_circles(n_samples=200, shuffle=True,noise=0.2,factor=0.1)
+X, y = make_circles(n_samples=200, shuffle=True,noise=0.2,factor=0.4)
+#mat=scipy.io.loadmat(r"C:\personal\data.mat")
+
+#X=mat["X"]
+#y=mat["y"]
 
 train_Y=np.asarray(y)
 train_X=np.asarray(X)
@@ -84,11 +88,11 @@ def L_layer_model(train_X, train_Y, layers_dims, learning_rate = 0.0075, num_ite
 
 """ Train a L Layer model with Regularization """
 
-def L_layer_model_with_regularization(train_X, train_Y, layers_dims,lambd=10,learning_rate = 0.0075, num_iterations = 3000, print_cost=False):
+def L_layer_model_with_regularization(train_X, train_Y, layers_dims,lambd=0,learning_rate = 0.0075, num_iterations = 3000, print_cost=False):
     
     np.random.seed(1)
     costs=[]
-    
+    print(lambd)
     #initialize weights and bias
     parameters=lann.initialize_parameters(layers_dims)
     
@@ -137,13 +141,13 @@ def predict_plot2(train_X,train_Y,parameters):
     
     
 
-layers_dims=[train_X.shape[0],4,1]# Defining the shape of the network
+layers_dims=[train_X.shape[0],80,50,30,10,7,1]# Defining the shape of the network
 
 """ Without Regulatization """
-parameters=L_layer_model(train_X, train_Y, layers_dims, learning_rate = 0.075, num_iterations = 4000, print_cost=True)# training the network without regularization
+parameters=L_layer_model(train_X, train_Y, layers_dims, learning_rate = 0.075, num_iterations = 6000, print_cost=True)# training the network without regularization
 
 """ Wiht Regularization """
-parameters2=L_layer_model_with_regularization(train_X, train_Y, layers_dims,lambd=0.7,learning_rate = 0.075, num_iterations = 14000, print_cost=True)# training the network without regularization
+parameters2=L_layer_model_with_regularization(train_X, train_Y, layers_dims,lambd=2,learning_rate = 0.075, num_iterations = 6000, print_cost=True)# training the network without regularization
 
 
 
@@ -190,18 +194,19 @@ def plot_decision_boundary(X, y, parameters, steps=1000, cmap='Paired'):
     ax.contourf(xx, yy, z, cmap=cmap, alpha=0.5)
 
     # Get predicted labels on training data and plot
-    train_labels =predict_plot(X,parameters)
+    #train_labels =predict_plot(X,parameters)
+    X_disp=X.T
     color= ['red' if l == 0 else 'green' for l in y.T]
-    ax.scatter(X[0,:], X[1,:],c=color,cmap=cmap, lw=0)
+    ax.scatter(X_disp[0,:], X_disp[1,:],c=color,cmap=cmap, lw=0)
+    #ax.set_yticks((-0.5,0.8))
+    #ax.set_xticks((-0.5,0.5))
 
     return fig, ax
 
 
-plot_decision_boundary(train_X,train_Y,parameters,cmap='RdBu')
+plot_decision_boundary(train_X.T,train_Y,parameters,cmap='RdBu')
 
-
-
-
+plot_decision_boundary(train_X.T,train_Y,parameters2,cmap='BrBG')
 
 
 

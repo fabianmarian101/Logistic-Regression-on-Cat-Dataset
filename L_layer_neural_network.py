@@ -95,9 +95,30 @@ def compute_cost(AL,Y):
     m=Y.shape[1]
     cost = (1./m) * (-np.dot(Y,np.log(AL).T) - np.dot(1-Y, np.log(1-AL).T))
     
-    #cost = np.squeeze(cost)     
+    cost = np.squeeze(cost)     
     return cost
 
+""" Gives the cost of the network when Regularization is enabled"""
+
+def compute_reg_cost(AL,Y,parameters,lambd):
+    
+    sum_weights=0
+    L=len(parameters)//2
+    m=Y.shape[1]
+    
+    for i in range(1,L+1):
+        #print("W"+str(i))
+        sum_weights=sum_weights+np.sum(np.square(parameters["W"+str(i)]))
+        
+    normal_cost=compute_cost(AL,Y)
+    
+    reg_cost=(lambd/(2*m))*sum_weights
+    
+    #print(reg_cost)
+    
+    final_cost=normal_cost+reg_cost
+    return(final_cost)
+    
 
 """ Computes dW db dA """
 
@@ -114,6 +135,22 @@ def linear_backward(dZ,cache):
     return dA_prev,dW,db
 
 
+""" Computes dW db dA when using Regularization"""
+
+def linear_backward_with_regularization(dZ,cache,lambd):
+    
+    A_prev,W,b=cache
+    m=A_prev.shape[1]
+    
+    reg_drev=(lambd/m)*W
+    #print(reg_drev)
+    
+    dW=(1/m)*np.dot(dZ,A_prev.T) + reg_drev 
+    db=(1/m)*np.sum(dZ,axis=1,keepdims=True)
+    dA_prev=np.dot(W.T,dZ)
+    #print(dW)
+    return dA_prev,dW,db
+    
 """ Derivation for Relu """
 
 def relu_backward(dA,activation_cache):
@@ -154,6 +191,22 @@ def linear_activation_backward(dA,cache,activation):
     return dA_prev,dW,db
 
 
+""" Performing all dZ,dA,db,dW with Regularization"""
+
+def linear_activation_backward_with_regularization(dA,cache,lambd,activation):
+    
+    linear_cache,activation_cache=cache
+    
+    if activation=='sigmoid':
+        dZ=sigmoid_backward(dA,activation_cache)
+        dA_prev,dW,db=linear_backward_with_regularization(dZ,linear_cache,lambd)
+        
+    if activation=='relu':
+        dZ=relu_backward(dA,activation_cache)
+        dA_prev,dW,db=linear_backward_with_regularization(dZ,linear_cache,lambd)
+        
+    return dA_prev,dW,db
+
 
 """ Performing BackPropogation in a single funtion """
 
@@ -171,7 +224,7 @@ def L_model_backward(AL,Y,caches):
     
     for i in reversed(range(L-1)):
         
-        
+        #print(i)
         current_cache=caches[i]
         dA_temp,dW_temp,db_temp=linear_activation_backward(grads['dA'+str(i+1)],current_cache,'relu')
         
@@ -180,6 +233,33 @@ def L_model_backward(AL,Y,caches):
         grads['db'+str(i+1)]=db_temp
         
     return grads
+
+
+""" Performing BackPropogation along with Regularization """
+
+def L_model_backward_with_regularization(AL,Y,caches,lambd):
+    
+    grads={}
+    L=len(caches)
+    
+    dAL=-(np.divide(Y,AL)-np.divide((1-Y),(1-AL)))
+    
+    current_cache=caches[L-1]
+    
+    grads['dA'+str(L-1)],grads['dW'+str(L)],grads['db'+str(L)]=linear_activation_backward_with_regularization(dAL,current_cache,lambd,'sigmoid')
+    
+    for i in reversed(range(L-1)):
+        
+        #print(i)
+        current_cache=caches[i]
+        dA_temp,dW_temp,db_temp=linear_activation_backward_with_regularization(grads['dA'+str(i+1)],current_cache,lambd,'relu')
+        
+        grads['dA'+str(i)]=dA_temp
+        grads['dW'+str(i+1)]=dW_temp
+        grads['db'+str(i+1)]=db_temp
+        
+    return grads
+
 
 
 """ Updating the parameters of W and b """
