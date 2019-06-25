@@ -26,7 +26,7 @@ from sklearn.datasets import make_circles
 #y=mat["y"]
 """ Create dataset and transform  the dataset """
 
-X, y = make_circles(n_samples=200, shuffle=True,noise=0.2,factor=0.4)
+X, y = make_circles(n_samples=200, shuffle=True,noise=0.2,factor=0.2)
 #mat=scipy.io.loadmat(r"C:\personal\data.mat")
 
 #X=mat["X"]
@@ -141,13 +141,13 @@ def predict_plot2(train_X,train_Y,parameters):
     
     
 
-layers_dims=[train_X.shape[0],80,50,30,10,7,1]# Defining the shape of the network
+layers_dims=[train_X.shape[0],100,70,50,30,10,1]# Defining the shape of the network
 
 """ Without Regulatization """
-parameters=L_layer_model(train_X, train_Y, layers_dims, learning_rate = 0.075, num_iterations = 6000, print_cost=True)# training the network without regularization
+parameters=L_layer_model(train_X, train_Y, layers_dims, learning_rate = 0.0075, num_iterations = 60000, print_cost=True)# training the network without regularization
 
 """ Wiht Regularization """
-parameters2=L_layer_model_with_regularization(train_X, train_Y, layers_dims,lambd=2,learning_rate = 0.075, num_iterations = 6000, print_cost=True)# training the network without regularization
+parameters2=L_layer_model_with_regularization(train_X, train_Y, layers_dims,lambd=5,learning_rate = 0.0075, num_iterations = 60000, print_cost=True)# training the network without regularization
 
 
 
