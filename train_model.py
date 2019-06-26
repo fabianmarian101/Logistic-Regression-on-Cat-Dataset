@@ -126,7 +126,45 @@ def L_layer_model_with_regularization(train_X, train_Y, layers_dims,lambd=0,lear
     
     return parameters
 
+""" Training a L nmodel with Dropout """
 
+def L_layer_model_with_dropout(train_X, train_Y, layers_dims,keep_probs, learning_rate = 0.0075, num_iterations = 3000, print_cost=False):
+    
+    np.random.seed(1)
+    costs=[]
+    
+    #initialize weights and bias
+    parameters=lann.initialize_parameters(layers_dims)
+    
+    
+    for i in range(num_iterations):
+        
+        #Forward Propogation
+        AL,caches,D_collect=lann.linear_model_forward_with_dropout(train_X,parameters,keep_probs)
+        
+        #Compute Cost of the function
+        cost=lann.compute_cost(AL,train_Y)
+        
+        #Back Propogation
+        grads =lann.L_model_backward_with_dropout(AL, train_Y, caches,D_collect,keep_probs)
+
+        #Update Weights
+        parameters = lann.update_parameters(parameters, grads, learning_rate)
+        
+        #Printing costs
+        if print_cost and i % 20 == 0:
+            #print(grads)
+            print ("Cost after iteration %i: %f" %(i, cost))
+        if print_cost and i % 20 == 0:
+            costs.append(cost)
+            
+    plt.plot(np.squeeze(costs))
+    plt.ylabel('cost')
+    plt.xlabel('iterations (per tens)')
+    plt.title("Learning rate =" + str(learning_rate))
+    plt.show()
+    
+    return parameters
 
 """ Predicting Y to plot on a graph """
 
@@ -146,8 +184,18 @@ layers_dims=[train_X.shape[0],100,70,50,30,10,1]# Defining the shape of the netw
 """ Without Regulatization """
 parameters=L_layer_model(train_X, train_Y, layers_dims, learning_rate = 0.0075, num_iterations = 60000, print_cost=True)# training the network without regularization
 
-""" Wiht Regularization """
+""" With Regularization """
 parameters2=L_layer_model_with_regularization(train_X, train_Y, layers_dims,lambd=5,learning_rate = 0.0075, num_iterations = 60000, print_cost=True)# training the network without regularization
+
+
+""" With Dropout """
+keep_probs=[0.2,0.6,0.7,0.8,0.9]
+parameters3=L_layer_model_with_dropout(train_X, train_Y, layers_dims,keep_probs,learning_rate = 0.0075, num_iterations = 60000, print_cost=True)# training the network without regularization
+
+
+
+
+
 
 
 

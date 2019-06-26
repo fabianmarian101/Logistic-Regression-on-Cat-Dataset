@@ -53,13 +53,13 @@ def relu(Z):
 def relu_with_dropout(Z,keep_prob):
     
     A=np.maximum(Z,0)
-    D=np.random_rand(A.shape[0],A.shape[1])
+    D=np.random.rand(A.shape[0],A.shape[1])
     D=D<keep_prob
     A=np.multiply(A,D)
     A=A*(1/keep_prob)
-    activation_cache=(Z,D)
+    activation_cache=(Z)
     
-    return A,activation_cache
+    return A,activation_cache,D
 
 """ Computes both Z and A for Forward Propogation """
 
@@ -81,17 +81,22 @@ def linear_activation_forward(A_prev,W,b,activation):
 
 def linear_activation_forward_with_dropout(A_prev,W,b,activation,keep_prob):
     
+    #D=0
     if activation=='sigmoid':
         Z,linear_cache=linear_forward(A_prev,W,b)
         A,activation_cache=sigmoid(Z)
+        cache=(linear_cache,activation_cache)
+        return A,cache
     
     if activation=='relu':
         Z,linear_cache=linear_forward(A_prev,W,b)
-        A,activation_cache=relu_with_dropout(Z,keep_prob)
+        A,activation_cache,D=relu_with_dropout(Z,keep_prob)
+        cache=(linear_cache,activation_cache)
+        return A,cache,D
         
-    cache=(linear_cache,activation_cache)
     
-    return A,cache
+    
+    return A,cache,D
 
 """ Computes Activation of neuraons for all the layers """
 
@@ -130,18 +135,21 @@ def linear_model_forward_with_dropout(X,parameters,keep_probs):
     caches=[]
     A=X
     L=len(parameters)//2 #?? to have a integer value
+    D_collect=[]
     
     for i in range(1,L):
         A_prev=A
-        index=flag*i
+        index=flag*(i-1)
         keep_prob=keep_probs[index]
-        A,cache=linear_activation_forward_with_dropout(A_prev,parameters['W'+str(i)],parameters['b'+str(i)],'relu',keep_prob)
+        A,cache,D=linear_activation_forward_with_dropout(A_prev,parameters['W'+str(i)],parameters['b'+str(i)],'relu',keep_prob)
         caches.append(cache)
+        D_collect.append(D)
         
-    AL,cache=linear_activation_forward(A,parameters['W'+str(L)],parameters['b'+str(L)],'sigmoid')
+    AL,cache=linear_activation_forward_with_dropout(A,parameters['W'+str(L)],parameters['b'+str(L)],'sigmoid',keep_prob=1)
     caches.append(cache)
     
-    return(AL,caches)
+    
+    return(AL,caches,D_collect)
         
             
             
@@ -250,7 +258,7 @@ def sigmoid_backward(dA,activation_cache):
     
 
 """ Performing all dZ,dA,db,dW """
-
+ 
 def linear_activation_backward(dA,cache,activation):
     
     linear_cache,activation_cache=cache
@@ -286,18 +294,18 @@ def linear_activation_backward_with_regularization(dA,cache,lambd,activation):
 """ Performing all dZ,dA,db,dW with Dropout """
 
 
-def linear_activation_backward_with_dropout(dA,cache,activation,keep_prob):
+def linear_activation_backward_with_dropout(dA,cache,activation,D,keep_prob=1):
     
     linear_cache,activation_cache=cache
-    Z,D=activation_cache
+    #Z,D=activation_cache
     
     if activation=='sigmoid':
         dZ=sigmoid_backward(dA,activation_cache)
-        dA_prev,dW,db=linear_backward(dZ,linear_cache)
+        dA_prev,dW,db=linear_backward_with_dropout(dZ,linear_cache,D,keep_prob)
         
     if activation=='relu':
         dZ=relu_backward(dA,activation_cache)
-        dA_prev,dW,db=linear_backward(dZ,linear_cache,D,keep_prob)
+        dA_prev,dW,db=linear_backward_with_dropout(dZ,linear_cache,D,keep_prob)
         
     return dA_prev,dW,db
 
@@ -340,6 +348,7 @@ def L_model_backward_with_regularization(AL,Y,caches,lambd):
     
     current_cache=caches[L-1]
     
+    
     grads['dA'+str(L-1)],grads['dW'+str(L)],grads['db'+str(L)]=linear_activation_backward_with_regularization(dAL,current_cache,lambd,'sigmoid')
     
     for i in reversed(range(L-1)):
@@ -356,12 +365,13 @@ def L_model_backward_with_regularization(AL,Y,caches,lambd):
 
 """ (DROPOUT) Performing BackPropogation with Dropout """
 
-def L_model_backward_with_dropout(AL,Y,caches,keep_probs):
+def L_model_backward_with_dropout(AL,Y,caches,D_collect,keep_probs):
     
     flag=0
     grads={}
     L=len(caches)
     m=AL.shape[1]
+    drop_len=len(keep_probs)
     
     if len(keep_probs)==1:
         flag==0
@@ -371,15 +381,24 @@ def L_model_backward_with_dropout(AL,Y,caches,keep_probs):
     dAL=-(np.divide(Y,AL)-np.divide((1-Y),(1-AL)))
     
     current_cache=caches[L-1]
+    D=D_collect[drop_len-1]
     
-    grads['dA'+str(L-1)],grads['dW'+str(L)],grads['db'+str(L)]=linear_activation_backward_with_dropout(dAL,current_cache,'sigmoid')
+    grads['dA'+str(L-1)],grads['dW'+str(L)],grads['db'+str(L)]=linear_activation_backward_with_dropout(dAL,current_cache,'sigmoid',D,keep_prob=keep_probs[drop_len-1])
     
     for i in reversed(range(L-1)):
         
-        index=flag*(i+1)
+        index=flag*(i-1)
+        #print(index)
+
         keep_prob=keep_probs[index]
         current_cache=caches[i]
-        dA_temp,dW_temp,db_temp=linear_activation_backward_with_dropout(grads['dA'+str(i+1)],current_cache,'relu',keep_prob)
+        if i==0:
+            D=1
+            keep_prob=1
+        else:    
+            D=D_collect[i-1]
+        
+        dA_temp,dW_temp,db_temp=linear_activation_backward_with_dropout(grads['dA'+str(i+1)],current_cache,'relu',D,keep_prob)
         
         grads['dA'+str(i)]=dA_temp
         grads['dW'+str(i+1)]=dW_temp
