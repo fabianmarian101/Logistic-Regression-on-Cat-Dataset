@@ -90,7 +90,11 @@ def linear_activation_forward_with_dropout(A_prev,W,b,activation,keep_prob):
     
     if activation=='relu':
         Z,linear_cache=linear_forward(A_prev,W,b)
-        A,activation_cache,D=relu_with_dropout(Z,keep_prob)
+        A,activation_cache=relu(Z)
+        D=np.random.rand(A.shape[0],A.shape[1])
+        D=D<keep_prob
+        A=np.multiply(A,D)
+        A=A*(1/keep_prob)
         cache=(linear_cache,activation_cache)
         return A,cache,D
         
@@ -229,7 +233,7 @@ def linear_backward_with_dropout(dZ,cache,D,keep_prob):
     dW=(1/m)*np.dot(dZ,A_prev.T)
     db=(1/m)*np.sum(dZ,axis=1,keepdims=True)
     dA_prev=np.dot(W.T,dZ)
-    dA_prev=np.multiply(A_prev,D)
+    dA_prev=A_prev*D
     dA_prev=dA_prev*(1/keep_prob)
     
     return dA_prev,dW,db
@@ -383,22 +387,30 @@ def L_model_backward_with_dropout(AL,Y,caches,D_collect,keep_probs):
     current_cache=caches[L-1]
     D=D_collect[drop_len-1]
     
-    grads['dA'+str(L-1)],grads['dW'+str(L)],grads['db'+str(L)]=linear_activation_backward_with_dropout(dAL,current_cache,'sigmoid',D,keep_prob=keep_probs[drop_len-1])
+    grads['dA'+str(L-1)],grads['dW'+str(L)],grads['db'+str(L)]=linear_activation_backward(dAL,current_cache,'sigmoid')
+    
+    grads['dA'+str(L-1)]=grads['dA'+str(L-1)]*D_collect[drop_len-1]
+    grads['dA'+str(L-1)]=grads['dA'+str(L-1)]*(1/keep_probs[drop_len-1])
     
     for i in reversed(range(L-1)):
         
+        #print("Hi"+str(i))
+        #print("Hello"+str(i-1))
         index=flag*(i-1)
-        #print(index)
+        #print("Index"+str(index))
 
         keep_prob=keep_probs[index]
         current_cache=caches[i]
         if i==0:
-            D=1
+            D=0
             keep_prob=1
         else:    
             D=D_collect[i-1]
         
-        dA_temp,dW_temp,db_temp=linear_activation_backward_with_dropout(grads['dA'+str(i+1)],current_cache,'relu',D,keep_prob)
+        dA_temp,dW_temp,db_temp=linear_activation_backward(grads['dA'+str(i+1)],current_cache,'relu')
+        
+        dA_temp=dA_temp*D
+        dA_temp=dA_temp*(1/keep_prob)
         
         grads['dA'+str(i)]=dA_temp
         grads['dW'+str(i+1)]=dW_temp

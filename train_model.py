@@ -11,7 +11,7 @@ import h5py
 #import load_dataset as ld
 import L_layer_neural_network as lann
 import matplotlib.pyplot as plt
-import visualize_ann as va
+#import visualize_ann as va
 import scipy.io
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.datasets import make_circles
@@ -26,7 +26,7 @@ from sklearn.datasets import make_circles
 #y=mat["y"]
 """ Create dataset and transform  the dataset """
 
-X, y = make_circles(n_samples=200, shuffle=True,noise=0.2,factor=0.2)
+X, y = make_circles(n_samples=200, shuffle=True,noise=0.26,factor=0.1)
 #mat=scipy.io.loadmat(r"C:\personal\data.mat")
 
 #X=mat["X"]
@@ -127,9 +127,10 @@ def L_layer_model_with_regularization(train_X, train_Y, layers_dims,lambd=0,lear
     return parameters
 
 """ Training a L nmodel with Dropout """
-
+catch=()
 def L_layer_model_with_dropout(train_X, train_Y, layers_dims,keep_probs, learning_rate = 0.0075, num_iterations = 3000, print_cost=False):
     
+    global catch
     np.random.seed(1)
     costs=[]
     
@@ -141,7 +142,8 @@ def L_layer_model_with_dropout(train_X, train_Y, layers_dims,keep_probs, learnin
         
         #Forward Propogation
         AL,caches,D_collect=lann.linear_model_forward_with_dropout(train_X,parameters,keep_probs)
-        
+        catch=caches
+        #print(caches)
         #Compute Cost of the function
         cost=lann.compute_cost(AL,train_Y)
         
@@ -179,18 +181,18 @@ def predict_plot2(train_X,train_Y,parameters):
     
     
 
-layers_dims=[train_X.shape[0],100,70,50,30,10,1]# Defining the shape of the network
+layers_dims=[train_X.shape[0],50,30,10,1]# Defining the shape of the network
 
 """ Without Regulatization """
-parameters=L_layer_model(train_X, train_Y, layers_dims, learning_rate = 0.0075, num_iterations = 60000, print_cost=True)# training the network without regularization
+parameters=L_layer_model(train_X, train_Y, layers_dims, learning_rate = 0.0075, num_iterations = 30000, print_cost=True)# training the network without regularization
 
 """ With Regularization """
-parameters2=L_layer_model_with_regularization(train_X, train_Y, layers_dims,lambd=5,learning_rate = 0.0075, num_iterations = 60000, print_cost=True)# training the network without regularization
+parameters2=L_layer_model_with_regularization(train_X, train_Y, layers_dims,lambd=5,learning_rate = 0.0075, num_iterations = 30000, print_cost=True)# training the network without regularization
 
 
 """ With Dropout """
-keep_probs=[0.2,0.6,0.7,0.8,0.9]
-parameters3=L_layer_model_with_dropout(train_X, train_Y, layers_dims,keep_probs,learning_rate = 0.0075, num_iterations = 60000, print_cost=True)# training the network without regularization
+keep_probs=[0.1,0.6,0.7]
+parameters3=L_layer_model_with_dropout(train_X, train_Y, layers_dims,keep_probs,learning_rate = 0.0075, num_iterations =30000, print_cost=True)# training the network without regularization
 
 
 
@@ -256,6 +258,7 @@ plot_decision_boundary(train_X.T,train_Y,parameters,cmap='RdBu')
 
 plot_decision_boundary(train_X.T,train_Y,parameters2,cmap='BrBG')
 
+plot_decision_boundary(train_X.T,train_Y,parameters3,cmap='BrBG')
 
 
 
