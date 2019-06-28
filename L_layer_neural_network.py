@@ -223,20 +223,6 @@ def linear_backward_with_regularization(dZ,cache,lambd):
     #print(dW)
     return dA_prev,dW,db
 
-""" Computes dW db dA with Dropout """
-
-def linear_backward_with_dropout(dZ,cache,D,keep_prob):
-    
-    A_prev,W,b=cache
-    m=A_prev.shape[1]
-    
-    dW=(1/m)*np.dot(dZ,A_prev.T)
-    db=(1/m)*np.sum(dZ,axis=1,keepdims=True)
-    dA_prev=np.dot(W.T,dZ)
-    dA_prev=A_prev*D
-    dA_prev=dA_prev*(1/keep_prob)
-    
-    return dA_prev,dW,db
     
 """ Derivation for Relu """
 
@@ -291,25 +277,6 @@ def linear_activation_backward_with_regularization(dA,cache,lambd,activation):
     if activation=='relu':
         dZ=relu_backward(dA,activation_cache)
         dA_prev,dW,db=linear_backward_with_regularization(dZ,linear_cache,lambd)
-        
-    return dA_prev,dW,db
-
-
-""" Performing all dZ,dA,db,dW with Dropout """
-
-
-def linear_activation_backward_with_dropout(dA,cache,activation,D,keep_prob=1):
-    
-    linear_cache,activation_cache=cache
-    #Z,D=activation_cache
-    
-    if activation=='sigmoid':
-        dZ=sigmoid_backward(dA,activation_cache)
-        dA_prev,dW,db=linear_backward_with_dropout(dZ,linear_cache,D,keep_prob)
-        
-    if activation=='relu':
-        dZ=relu_backward(dA,activation_cache)
-        dA_prev,dW,db=linear_backward_with_dropout(dZ,linear_cache,D,keep_prob)
         
     return dA_prev,dW,db
 

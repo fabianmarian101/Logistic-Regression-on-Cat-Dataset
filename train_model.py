@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import scipy.io
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.datasets import make_circles
+from sklearn.datasets import make_moons
 
 #train_set_x_orig,train_set_y_orig,test_set_x_orig,test_set_y_orig,classes=ld.load_dataset()
 
@@ -26,8 +27,10 @@ from sklearn.datasets import make_circles
 #y=mat["y"]
 """ Create dataset and transform  the dataset """
 
-X, y = make_circles(n_samples=200, shuffle=True,noise=0.26,factor=0.1)
+#X, y = make_circles(n_samples=200, shuffle=True,noise=0.2,factor=0.12)
 #mat=scipy.io.loadmat(r"C:\personal\data.mat")
+
+X, y = make_moons(n_samples=200, shuffle=True,noise=0.2)
 
 #X=mat["X"]
 #y=mat["y"]
@@ -44,7 +47,24 @@ xx=train_X.T
 color= ['red' if l == 0 else 'green' for l in yy]
 
 plt.scatter(xx[:,0],xx[:,1],color=color)
+plt.show()
 
+#t_X,t_Y=make_circles(n_samples=200, shuffle=True,noise=0.17,factor=0.12)
+
+t_X,t_Y=make_moons(n_samples=200, shuffle=True,noise=0.17)
+test_Y=np.asarray(t_Y)
+test_X=np.asarray(t_X)
+
+test_Y=test_Y.T
+y_plot2=test_Y
+test_X=test_X.T
+test_Y=test_Y.reshape(1,-1)
+yy2=y_plot2.T
+xx2=test_X.T
+color= ['red' if l == 0 else 'green' for l in yy2]
+
+plt.scatter(xx2[:,0],xx2[:,1],color=color)
+plt.show()
 """ L Layer model for training a neural network without regularization"""
 
 def L_layer_model(train_X, train_Y, layers_dims, learning_rate = 0.0075, num_iterations = 3000, print_cost=False):
@@ -184,15 +204,15 @@ def predict_plot2(train_X,train_Y,parameters):
 layers_dims=[train_X.shape[0],50,30,10,1]# Defining the shape of the network
 
 """ Without Regulatization """
-parameters=L_layer_model(train_X, train_Y, layers_dims, learning_rate = 0.0075, num_iterations = 30000, print_cost=True)# training the network without regularization
+parameters=L_layer_model(train_X, train_Y, layers_dims, learning_rate = 0.075, num_iterations = 5000, print_cost=True)# training the network without regularization
 
 """ With Regularization """
-parameters2=L_layer_model_with_regularization(train_X, train_Y, layers_dims,lambd=5,learning_rate = 0.0075, num_iterations = 30000, print_cost=True)# training the network without regularization
+parameters2=L_layer_model_with_regularization(train_X, train_Y, layers_dims,lambd=5,learning_rate = 0.075, num_iterations = 5000, print_cost=True)# training the network without regularization
 
 
 """ With Dropout """
-keep_probs=[0.1,0.6,0.7]
-parameters3=L_layer_model_with_dropout(train_X, train_Y, layers_dims,keep_probs,learning_rate = 0.0075, num_iterations =30000, print_cost=True)# training the network without regularization
+keep_probs=[0.5,0.6,0.7]
+parameters3=L_layer_model_with_dropout(train_X, train_Y, layers_dims,keep_probs,learning_rate = 0.075, num_iterations =4000, print_cost=True)# training the network without regularization
 
 
 
@@ -261,10 +281,29 @@ plot_decision_boundary(train_X.T,train_Y,parameters2,cmap='BrBG')
 plot_decision_boundary(train_X.T,train_Y,parameters3,cmap='BrBG')
 
 
+def predict(test_X,test_Y,parameters):
+    
+    AL_test,acti=lann.linear_model_forward(test_X,parameters)
+    AL_test[AL_test>=0.5]=1
+    AL_test[AL_test<=0.5]=0
+    accuracy=(np.sum(test_Y-AL_test)/test_Y.shape[1])*100
+    accuracy2 = float((np.dot(test_Y,AL_test.T) + np.dot(1-test_Y,1-AL_test.T))/float(test_Y.shape[1])*100)
+    
+    print("Accuracy is "+str(accuracy))
+    
+    print("Accuracy2 is "+str(accuracy2))
+    #print(accuracy)
+    #return(acti)
 
 
+predict(test_X,test_Y,parameters)
+plot_decision_boundary(test_X.T,test_Y,parameters,cmap="BrBG")
 
+predict(test_X,test_Y,parameters2)
+plot_decision_boundary(test_X.T,test_Y,parameters2,cmap="BrBG")
 
+predict(test_X,test_Y,parameters3)
+plot_decision_boundary(test_X.T,test_Y,parameters3,cmap="BrBG")
 
 
 
