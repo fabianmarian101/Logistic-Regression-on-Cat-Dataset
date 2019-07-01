@@ -8,7 +8,7 @@ Created on Fri Jun 21 14:08:17 2019
 
 import numpy as np
 import h5py
-#import load_dataset as ld
+import load_dataset as ld
 import L_layer_neural_network as lann
 import matplotlib.pyplot as plt
 #import visualize_ann as va
@@ -16,6 +16,12 @@ import scipy.io
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.datasets import make_circles
 from sklearn.datasets import make_moons
+import math
+
+train_set_x_orig,train_set_y_orig,test_set_x_orig,test_set_y_orig,classes=ld.load_dataset()
+
+train_X,train_Y,test_X,test_Y=ld.process_data(train_set_x_orig,train_set_y_orig,test_set_x_orig,test_set_y_orig)
+
 
 #train_set_x_orig,train_set_y_orig,test_set_x_orig,test_set_y_orig,classes=ld.load_dataset()
 
@@ -29,7 +35,7 @@ from sklearn.datasets import make_moons
 
 #X, y = make_circles(n_samples=200, shuffle=True,noise=0.2,factor=0.12)
 #mat=scipy.io.loadmat(r"C:\personal\data.mat")
-
+"""
 X, y = make_moons(n_samples=200, shuffle=True,noise=0.2)
 
 #X=mat["X"]
@@ -65,6 +71,32 @@ color= ['red' if l == 0 else 'green' for l in yy2]
 
 plt.scatter(xx2[:,0],xx2[:,1],color=color)
 plt.show()
+"""
+
+""" Create Random mini Batches """
+def random_mini_batches(X,Y,mini_batch):
+    
+    m=X.shape[1]
+    mini_batch_X=[]
+    mini_batch_Y=[]
+    
+    permutation=list(np.random.permutation(m))
+    
+    shuffled_X=X[:,permutation]
+    shuffled_Y=Y[:,permutation].reshape((1,m))
+    
+    num_of_mini_batches=math.floor(m/mini_batch)
+    
+    for i in range(num_of_mini_batches):
+        mini_batch_X.append(shuffled_X[:,i*mini_batch:(i+1)*mini_batch])
+        mini_batch_Y.append(shuffled_Y[:,i*mini_batch:(i+1)*mini_batch])
+        
+    if m%mini_batch!=0:
+        mini_batch_X.append(shuffled_X[:,mini_batch*num_of_mini_batches:m])
+        mini_batch_Y.append(shuffled_Y[:,mini_batch*num_of_mini_batches:m])
+        
+    return (mini_batch_X,mini_batch_Y)
+
 """ L Layer model for training a neural network without regularization"""
 
 def L_layer_model(train_X, train_Y, layers_dims, learning_rate = 0.0075, num_iterations = 3000, print_cost=False):
@@ -188,6 +220,60 @@ def L_layer_model_with_dropout(train_X, train_Y, layers_dims,keep_probs, learnin
     
     return parameters
 
+
+""" Training a L Layer model with mini batches """
+
+def L_layer_model_with_batch(train_X, train_Y, layers_dims,mini_batch,learning_rate = 0.0075, num_iterations = 3000, print_cost=False):
+    
+    np.random.seed(1)
+    costs=[]
+    
+    X_mini_batch,Y_min_batch=random_mini_batches(train_X,train_Y,mini_batch)
+    #initialize weights and bias
+    parameters=lann.initialize_parameters(layers_dims)
+    
+    num_of_mini_batch=len(X_mini_batch)
+    
+    for i in range(num_iterations):
+        for j in range(num_of_mini_batch):  
+        #Forward Propogation
+            AL,caches=lann.linear_model_forward(X_mini_batch[j],parameters)
+        
+        #Compute Cost of the function
+            cost=lann.compute_cost(AL,Y_min_batch[j])
+        
+        #Back Propogation
+            grads =lann.L_model_backward(AL, Y_min_batch[j], caches)
+
+        #Update Weights
+            parameters = lann.update_parameters(parameters, grads, learning_rate)
+        
+        #Printing costs
+        #if print_cost and j % 4 == 0:
+            #print(grads)
+        print ("Cost after iteration %i: %f" %(i, cost))
+        #if print_cost and i % 4 == 0:
+        costs.append(cost)
+            
+    plt.plot(np.squeeze(costs))
+    plt.ylabel('cost')
+    plt.xlabel('iterations (per tens)')
+    plt.title("Learning rate =" + str(learning_rate))
+    plt.show()
+    
+    return parameters
+
+
+
+
+
+
+
+
+
+
+
+
 """ Predicting Y to plot on a graph """
 
 
@@ -203,16 +289,19 @@ def predict_plot2(train_X,train_Y,parameters):
 
 layers_dims=[train_X.shape[0],50,30,10,1]# Defining the shape of the network
 
+""" With min Batch """
+parameters4=L_layer_model_with_batch(train_X,train_Y, layers_dims,10,learning_rate = 0.075, num_iterations = 300, print_cost=True)
+
 """ Without Regulatization """
-parameters=L_layer_model(train_X, train_Y, layers_dims, learning_rate = 0.075, num_iterations = 5000, print_cost=True)# training the network without regularization
+parameters=L_layer_model(train_X, train_Y, layers_dims, learning_rate = 0.0075, num_iterations = 5000, print_cost=True)# training the network without regularization
 
 """ With Regularization """
-parameters2=L_layer_model_with_regularization(train_X, train_Y, layers_dims,lambd=5,learning_rate = 0.075, num_iterations = 5000, print_cost=True)# training the network without regularization
+parameters2=L_layer_model_with_regularization(train_X, train_Y, layers_dims,lambd=2,learning_rate = 0.075, num_iterations = 5000, print_cost=True)# training the network without regularization
 
 
 """ With Dropout """
-keep_probs=[0.5,0.6,0.7]
-parameters3=L_layer_model_with_dropout(train_X, train_Y, layers_dims,keep_probs,learning_rate = 0.075, num_iterations =4000, print_cost=True)# training the network without regularization
+keep_probs=[0.5,0.5,0.5]
+parameters3=L_layer_model_with_dropout(train_X, train_Y, layers_dims,keep_probs,learning_rate = 0.075, num_iterations =3000, print_cost=True)# training the network without regularization
 
 
 
@@ -286,10 +375,10 @@ def predict(test_X,test_Y,parameters):
     AL_test,acti=lann.linear_model_forward(test_X,parameters)
     AL_test[AL_test>=0.5]=1
     AL_test[AL_test<=0.5]=0
-    accuracy=(np.sum(test_Y-AL_test)/test_Y.shape[1])*100
+    #accuracy=(np.sum(test_Y-AL_test)/test_Y.shape[1])*100
     accuracy2 = float((np.dot(test_Y,AL_test.T) + np.dot(1-test_Y,1-AL_test.T))/float(test_Y.shape[1])*100)
     
-    print("Accuracy is "+str(accuracy))
+    #print("Accuracy is "+str(accuracy))
     
     print("Accuracy2 is "+str(accuracy2))
     #print(accuracy)
@@ -307,6 +396,7 @@ plot_decision_boundary(test_X.T,test_Y,parameters3,cmap="BrBG")
 
 
 
+predict(test_X,test_Y,parameters4)
 
 
 
