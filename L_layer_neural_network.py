@@ -10,10 +10,39 @@ import h5py
 import matplotlib.pyplot as plt
 
 
+""" initialize Adam optimizer """
+def initialize_adam(parameters):
+    L=len(parameters)//2
+    v={}
+    s={}
+    
+    for i in range(L):
+        v['dW'+str(i+1)]=np.zeros((parameters['W'+str(i+1)].shape[0],parameters['W'+str(i+1)].shape[1]))
+        v['db'+str(i+1)]=np.zeros((parameters['b'+str(i+1)].shape[0],parameters['b'+str(i+1)].shape[1]))
+        
+        s['dW'+str(i+1)]=np.zeros((parameters['W'+str(i+1)].shape[0],parameters['W'+str(i+1)].shape[1]))
+        s['db'+str(i+1)]=np.zeros((parameters['b'+str(i+1)].shape[0],parameters['b'+str(i+1)].shape[1]))
+        
+    return v,s
+
+
+""" initialize Velocity for Exponentially weighted averages """
+
+def initialize_velocity(parameters):
+    L=len(parameters)//2
+    v={}
+    
+    for i in range(L):
+        v['dW'+str(i+1)]=np.zeros((parameters["W"+str(i+1)].shape[0],parameters["W"+str(i+1)].shape[1]))
+        v['db'+str(i+1)]=np.zeros((parameters["b"+str(i+1)].shape[0],parameters["b"+str(i+1)].shape[1]))
+        
+    return v
+
 """ Initialization of parameters for N layer network """
-parameters=dict()
+#s
 def initialize_parameters(layer_dims):
     np.random.seed(1)
+    parameters=dict()
     L=len(layer_dims)
     for i in range(1,L):
         parameters['W'+str(i)]=np.random.randn(layer_dims[i],layer_dims[i-1])/ np.sqrt(layer_dims[i-1])
@@ -384,6 +413,23 @@ def L_model_backward_with_dropout(AL,Y,caches,D_collect,keep_probs):
         grads['db'+str(i+1)]=db_temp
         
     return grads
+
+""" Update parameters with momentum """
+
+def update_parameters_with_momentum(parameters,grads,v,beta,learning_rate):
+    
+    L=len(parameters)//2
+    
+    for i in range(L):
+        
+        v['dW'+str(i+1)]=beta*v['dW'+str(i+1)]+(1-beta)*grads['dW'+str(i+1)]
+        v['db'+str(i+1)]=beta*v['db'+str(i+1)]+(1-beta)*grads['db'+str(i+1)]
+        
+        parameters['W'+str(i+1)]=parameters['W'+str(i+1)]-(learning_rate*v['dW'+str(i+1)])
+        parameters['b'+str(i+1)]=parameters['b'+str(i+1)]-(learning_rate*v['db'+str(i+1)])
+        
+    return parameters,v
+
 """ Updating the parameters of W and b """
 
 def update_parameters(parameters,grads,learning_rate):
@@ -401,8 +447,33 @@ def update_parameters(parameters,grads,learning_rate):
 
         
         
+""" Adam OPtimiser """
+
+def adam_optimiser(parameters,grads,v,s,t,learning_rate=0.0001,beta1=0.9,beta2=0.999,epsilon=1e-8):
+    
+    L=len(parameters)//2
+    
+    v_corrected={}
+    s_corrected={}
+    
+    for i in range(L):
         
+        v['dW'+str(i+1)]=beta1*v['dW'+str(i+1)]+(1-beta1)*grads['dW'+str(i+1)]
+        v['db'+str(i+1)]=beta1*v['db'+str(i+1)]+(1-beta1)*grads['db'+str(i+1)]
         
+        v_corrected['dW'+str(i+1)]=v['dW'+str(i+1)]/(1-(beta1**t))
+        v_corrected['db'+str(i+1)]=v['db'+str(i+1)]/(1-(beta1**t))
+        
+        s['dW'+str(i+1)]=beta2*s['dW'+str(i+1)]+(1-beta2)*(grads['dW'+str(i+1)]**2)
+        s['db'+str(i+1)]=beta2*s['db'+str(i+1)]+(1-beta2)*(grads['db'+str(i+1)]**2)
+    
+        s_corrected['dW'+str(i+1)]=s['dW'+str(i+1)]/(1-(beta2**t))
+        s_corrected['db'+str(i+1)]=s['db'+str(i+1)]/(1-(beta2**t))
+        
+        parameters['W'+str(i+1)]=parameters['W'+str(i+1)]-learning_rate*(v_corrected['dW'+str(i+1)]/np.sqrt(s_corrected['dW'+str(i+1)]+epsilon))
+        parameters['b'+str(i+1)]=parameters['b'+str(i+1)]-learning_rate*(v_corrected['db'+str(i+1)]/np.sqrt(s_corrected['db'+str(i+1)]+epsilon))
+        
+        return parameters
         
         
         

@@ -74,8 +74,9 @@ plt.show()
 """
 
 """ Create Random mini Batches """
-def random_mini_batches(X,Y,mini_batch):
+def random_mini_batches(X,Y,mini_batch,seed):
     
+    np.random.seed(seed)
     m=X.shape[1]
     mini_batch_X=[]
     mini_batch_Y=[]
@@ -223,20 +224,24 @@ def L_layer_model_with_dropout(train_X, train_Y, layers_dims,keep_probs, learnin
 
 """ Training a L Layer model with mini batches """
 
-def L_layer_model_with_batch(train_X, train_Y, layers_dims,mini_batch,learning_rate = 0.0075, num_iterations = 3000, print_cost=False):
+def L_layer_model_with_batch(train_X, train_Y, layers_dims,mini_batch,beta,learning_rate = 0.0075, num_iterations = 3000, print_cost=False):
     
     np.random.seed(1)
     costs=[]
     
     X_mini_batch,Y_min_batch=random_mini_batches(train_X,train_Y,mini_batch)
     #initialize weights and bias
+    #print(X_mini_batch[0].shape)
+    
     parameters=lann.initialize_parameters(layers_dims)
+    v=lann.initialize_velocity(parameters)
     
     num_of_mini_batch=len(X_mini_batch)
     
     for i in range(num_iterations):
         for j in range(num_of_mini_batch):  
         #Forward Propogation
+            
             AL,caches=lann.linear_model_forward(X_mini_batch[j],parameters)
         
         #Compute Cost of the function
@@ -246,8 +251,8 @@ def L_layer_model_with_batch(train_X, train_Y, layers_dims,mini_batch,learning_r
             grads =lann.L_model_backward(AL, Y_min_batch[j], caches)
 
         #Update Weights
-            parameters = lann.update_parameters(parameters, grads, learning_rate)
-        
+            #parameters,v = lann.update_parameters_with_momentum(parameters,grads,v,beta,learning_rate)
+            lann.update_parameters(parameters, grads, learning_rate)
         #Printing costs
         #if print_cost and j % 4 == 0:
             #print(grads)
@@ -264,8 +269,56 @@ def L_layer_model_with_batch(train_X, train_Y, layers_dims,mini_batch,learning_r
     return parameters
 
 
+""" L  layer model with all optimization """
 
+def model(train_X,train_Y,layers_dims,optimizer,learning_rate=0.0001,mini_batch=8,beta=0.9,beta1=0.9,beta2=0.999,epsilon=1e-8,num_iterations=10000,print_cost=True):
+    
+    seed=10
+    costs=[]
+    t=0
+    
+    parameters=lann.initialize_parameters(layers_dims)
+    
+    if optimizer=='momentum':
+        v=lann.initialize_velocity(parameters)
+    elif optimizer=='adam':
+        v,s=lann.initialize_adam(parameters)
+        
+    for i in range(num_iterations):
+        seed=seed+1
+        X_mini_batch,Y_mini_batch=random_mini_batches(train_X,train_Y,mini_batch,seed)
+        num_of_batch=len(X_mini_batch)
+        
+        for j in range(num_of_batch):
+            
+            #Forward Propogation
+            AL,caches=lann.linear_model_forward(X_mini_batch[j],parameters)
+            #Compute Cost of the function
+            cost=lann.compute_cost(AL,Y_mini_batch[j])
+            #Back Propogation
+            grads =lann.L_model_backward(AL, Y_mini_batch[j], caches)
+            
+            if optimizer=='gd':
+                parameters= lann.update_parameters(parameters,grads,learning_rate)
+            elif optimizer=='momentum':
+                parameters,v=lann.update_parameters_with_momentum(parameters,grads,v,beta,learning_rate)
+            elif optimizer=='adam':
+                t=t+1
+                parameters=lann.adam_optimiser(parameters,grads,v,s,t,learning_rate,beta1,beta2,epsilon)
+                
+        if print_cost and i % 100 == 0:
+            print ("Cost after epoch %i: %f" %(i, cost))
+        if print_cost and i % 100 == 0:
+            costs.append(cost)
+        print(i)
+    # plot the cost
+    plt.plot(costs)
+    plt.ylabel('cost')
+    plt.xlabel('epochs (per 100)')
+    plt.title("Learning rate = " + str(learning_rate))
+    plt.show()
 
+    return parameters
 
 
 
@@ -287,10 +340,10 @@ def predict_plot2(train_X,train_Y,parameters):
     
     
 
-layers_dims=[train_X.shape[0],50,30,10,1]# Defining the shape of the network
+layers_dims=[train_X.shape[0],12,7,5,1]# Defining the shape of the network
 
 """ With min Batch """
-parameters4=L_layer_model_with_batch(train_X,train_Y, layers_dims,10,learning_rate = 0.075, num_iterations = 300, print_cost=True)
+parameters4=L_layer_model_with_batch(train_X,train_Y, layers_dims,10,0.9,learning_rate = 0.075, num_iterations = 1050, print_cost=True)
 
 """ Without Regulatization """
 parameters=L_layer_model(train_X, train_Y, layers_dims, learning_rate = 0.0075, num_iterations = 5000, print_cost=True)# training the network without regularization
@@ -304,7 +357,9 @@ keep_probs=[0.5,0.5,0.5]
 parameters3=L_layer_model_with_dropout(train_X, train_Y, layers_dims,keep_probs,learning_rate = 0.075, num_iterations =3000, print_cost=True)# training the network without regularization
 
 
+""" with optimiser """
 
+parameters5=model(train_X,train_Y,layers_dims,optimizer='adam',learning_rate=0.0007,num_iterations=1000)
 
 
 
@@ -369,6 +424,8 @@ plot_decision_boundary(train_X.T,train_Y,parameters2,cmap='BrBG')
 
 plot_decision_boundary(train_X.T,train_Y,parameters3,cmap='BrBG')
 
+plot_decision_boundary(train_X.T,train_Y,parameters4,cmap='BrBG')
+
 
 def predict(test_X,test_Y,parameters):
     
@@ -397,6 +454,10 @@ plot_decision_boundary(test_X.T,test_Y,parameters3,cmap="BrBG")
 
 
 predict(test_X,test_Y,parameters4)
+plot_decision_boundary(test_X.T,test_Y,parameters4,cmap="BrBG")
+
+predict(test_X,test_Y,parameters5)
+plot_decision_boundary(test_X.T,test_Y,parameters5,cmap="BrBG")
 
 
 
